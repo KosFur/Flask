@@ -1,7 +1,13 @@
 from flask import Flask
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII']=False
 
+about_me = {
+   "name": "Константин",
+   "surname": "Фурманов",
+   "email": "konsfur@gmail.com"
+}
 
 @app.route("/")
 def hello_world():
@@ -10,3 +16,10 @@ def hello_world():
 
 if __name__ == "__main__":
    app.run(debug=True)
+
+@app.route("/about")
+def about():
+   return about_me
+
+if __name__ == "__main__":
+    app.run(debug=True)
