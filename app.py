@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from random import choice
 from flask import request
 
@@ -91,6 +91,15 @@ def get_new_id():
         return max(quote['id'] for quote in quotes) + 1
     else:
         return 1
+    
+@app.route("/qoutes/<int:qoute_id>", methods=["DELETE"])
+def delete_quote(quote_id: int):
+    for quote in quotes:
+        if quote["id"] == quote_id:
+            quotes.remove(quote)
+            return jsonify({"message": f"Quote with id={quote_id} is deleted"}), 200
+        else:
+            return {"error": f"Quote with id={quote_id} not found"}
 
 if __name__ == "__main__":
     app.run(debug=True)
