@@ -1,4 +1,5 @@
 from flask import Flask
+from random import choice
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII']=False
@@ -37,6 +38,16 @@ def get_quote(quote_id):
     else:
         
       return f"Quote with id={quote_id} not found", 404
+    
+@app.route('/quotes/count')
+def get_quote_count():
+    count = len(quotes)
+    return{'count': count}
+
+@app.route('/quotes/random')
+def get_random_quote():
+    random_quote = choice(quotes)
+    return (random_quote)
 
 if __name__ == "__main__":
     app.run(debug=True)
