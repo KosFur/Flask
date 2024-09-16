@@ -4,13 +4,44 @@ from random import choice
 from http import HTTPStatus
 from pathlib import Path
 import sqlite3
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String
+
+
+
 
 BASE_DIR = Path(__file__).parent
-path_to_db = BASE_DIR / "store.db"  # <- тут путь к БД
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{BASE_DIR / 'main.db'}"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
+class Base(DeclarativeBase):
+    pass
+
+
+db = SQLAlchemy(model_class=Base)
+db.init_app(app)
+
+class QuoteModel(Base):
+    __tablename__ = 'quotes'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    author: Mapped[str] = mapped_column(String(32), nullable=False)
+    text: Mapped[str] = mapped_column(String(255), nullable=False)
+    rating: Mapped[int] = mapped_column(default=1, nullable=False) 
+
+    def __init__(self, author, text):
+        self.author = author
+        self.text  = text
+
+# Создание таблицы (если она не существует)
+with app.app_context():
+    db.create_all()
 quotes = [
    {
        "id": 3,
@@ -34,29 +65,16 @@ quotes = [
    },
 
 ]
+@app.route('/')
+def home():
+    return "Hello Python"
 
 
-# URL: /quotes
-@app.route("/quotes")
-def get_quotes() -> list[dict[str, Any]]:
-   """ Функция неявно преобразовывает список словарей в JSON."""
-   select_quotes = "SELECT * FROM quotes"
-   connection = sqlite3.connect("store.db")
-   cursor = connection.cursor()
-   cursor.execute(select_quotes)
-   quotes_db = cursor.fetchall() # get list[tuple]
-   cursor.close()
-   connection.close()
-   # Подготовка данных для отправки в правильном формате
-   # Необходимо выполнить преобразование:
-   # list[tuple] -> list[dict]
-   keys = ("id", "author", "text")
-   quotes = []
-   for quote_db in quotes_db:
-      quote = dict(zip(keys, quote_db))
-      quotes.append(quote)
-   return jsonify(quotes), 200
-
+@app.route('/quotes')
+def get_quotes():
+    quotes = QuoteModel.query.all()
+    quotes_list = [{"id": q.id, "author": q.author, "text": q.text} for q in quotes]
+    return jsonify(quotes_list), 200
 
 @app.route("/quotes/<int:quote_id>")
 def get_quote(quote_id: int) -> dict:
@@ -125,6 +143,21 @@ def filter_quotes():
       filtered_quotes = [quote for quote in filtered_quotes if quote.get(key) == value]
    return filtered_quotes
 
+from flask import g
+
+DATABASE = '/path/to/database.db'
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
 
 if __name__ == "__main__":
    app.run(debug=True)
