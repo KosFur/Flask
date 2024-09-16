@@ -39,7 +39,7 @@ class QuoteModel(Base):
         self.author = author
         self.text  = text
 
-# Создание таблицы (если она не существует)
+
 with app.app_context():
     db.create_all()
 quotes = [
@@ -94,11 +94,10 @@ def quotes_count():
 @app.route("/quotes", methods=['POST'])
 def create_quote():
    """ Функция создает новую цитату в списке."""
-   new_quote = request.json  # json -> dict
-   last_quote = quotes[-1] # Последняя цитата в списке
+   new_quote = request.json  
+   last_quote = quotes[-1] 
    new_id = last_quote["id"] + 1
    new_quote["id"] = new_id
-   # Мы проверяем наличие ключа rating и его валидность(от 1 до 5)
    rating = new_quote.get("rating")
    if rating is None or rating not in range(1, 6):
       new_quote["rating"] = 1
@@ -113,7 +112,6 @@ def edit_quote(quote_id):
       for quote in quotes:
          if quote["id"] == quote_id:
             if "rating" in new_data and new_data["rating"] not in range(1, 6):
-               # Валидируем новое значени рейтинга и случае успеха обновляем данные
                new_data.pop("rating")
             quote.update(new_data)
             return jsonify(quote), HTTPStatus.OK
@@ -134,7 +132,6 @@ def delete_quote(quote_id: int):
 @app.route("/quotes/filter")
 def filter_quotes():
    filtered_quotes = quotes.copy()
-   # request.args хранит данные, полученные из query parameters
    for key, value in request.args.items():
       if key not in ("author", "rating"):
          return f"Invalid key {key}", HTTPStatus.BAD_REQUEST
